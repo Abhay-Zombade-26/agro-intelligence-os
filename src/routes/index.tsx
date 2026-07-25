@@ -6,6 +6,7 @@ import { AlertTriangle } from "lucide-react";
 import { FIELDS } from "@/lib/farm-data";
 import { useLenis } from "@/hooks/useLenis";
 import { FarmGrid } from "@/components/farm/FarmGrid";
+import { LandingPage } from "@/components/farm/LandingPage";
 import { SoilMoistureTube } from "@/components/farm/SoilMoistureTube";
 import { Thermometer } from "@/components/farm/Thermometer";
 import { NPKTriangle } from "@/components/farm/NPKTriangle";
@@ -90,7 +91,9 @@ function Dashboard() {
   }, [criticalFields]);
 
   return (
-    <main className="bg-topo min-h-screen text-dark-text">
+    <>
+      <LandingPage />
+      <main id="dashboard" className="bg-topo min-h-screen text-dark-text">
       {/* Ambient floating particles */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         {[...Array(18)].map((_, i) => (
@@ -273,5 +276,6 @@ function Dashboard() {
         </footer>
       </div>
     </main>
+    </>
   );
 }
