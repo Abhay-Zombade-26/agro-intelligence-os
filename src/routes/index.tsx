@@ -54,7 +54,10 @@ type ChartKey = (typeof CHARTS)[number]["key"];
 
 function Dashboard() {
   useLenis();
-  const [selectedId, setSelectedId] = useState(FIELDS[0].id);
+  const criticalFields = useMemo(() => FIELDS.filter((f) => f.status === "critical"), []);
+  const [selectedId, setSelectedId] = useState(
+    (criticalFields[0] ?? FIELDS[0]).id,
+  );
   const [hour, setHour] = useState(new Date().getHours());
   const [activeChart, setActiveChart] = useState<ChartKey>("moisture");
 
@@ -63,14 +66,28 @@ function Dashboard() {
     [selectedId],
   );
 
-  // Values interpolated at the selected timeline hour
   const reading = field.hourly[hour] ?? field.hourly[0];
   const liveMoisture = reading.moisture;
   const liveTemperature = reading.temperature;
 
   const totalHealthy = FIELDS.filter((f) => f.status === "healthy").length;
-  const totalCritical = FIELDS.filter((f) => f.status === "critical").length;
+  const totalWarning = FIELDS.filter((f) => f.status === "warning").length;
+  const totalCritical = criticalFields.length;
   const overall = Math.round(FIELDS.reduce((a, f) => a + f.health, 0) / FIELDS.length);
+
+  // Auto-alert: fire the toast for the top critical field within the first
+  // 3 seconds so a farmer opening the app sees the problem hands-free.
+  useEffect(() => {
+    const c = criticalFields[0];
+    if (!c) return;
+    const t = setTimeout(() => {
+      toast.error(`${c.name}: Immediate irrigation required`, {
+        description: `Moisture ${c.moisture}% · Canopy ${c.temperature}°C · ${c.action ?? "Begin drip irrigation within 2 hours."}`,
+        duration: 8000,
+      });
+    }, 1200);
+    return () => clearTimeout(t);
+  }, [criticalFields]);
 
   return (
     <main className="bg-topo min-h-screen text-dark-text">
