@@ -34,6 +34,10 @@ export interface FieldData {
   sensorUptime: number; // %
   waterToday: number; // liters
   timestamp: string;
+  problem?: string;
+  cause?: string;
+  action?: string;
+  recovery?: string;
   hourly: HourlyReading[];
   weekly: { day: string; health: number; moisture: number }[];
   monthly: { week: string; moisture: number }[];
