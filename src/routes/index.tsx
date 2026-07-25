@@ -1,6 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { createFileRoute } from "@tanstack/react-router";
+import { toast } from "sonner";
+import { AlertTriangle } from "lucide-react";
 import { FIELDS } from "@/lib/farm-data";
 import { useLenis } from "@/hooks/useLenis";
 import { FarmGrid } from "@/components/farm/FarmGrid";
