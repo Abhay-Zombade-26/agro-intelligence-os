@@ -34,6 +34,10 @@ export interface FieldData {
   sensorUptime: number; // %
   waterToday: number; // liters
   timestamp: string;
+  problem?: string;
+  cause?: string;
+  action?: string;
+  recovery?: string;
   hourly: HourlyReading[];
   weekly: { day: string; health: number; moisture: number }[];
   monthly: { week: string; moisture: number }[];
@@ -162,6 +166,42 @@ export const FIELDS: FieldData[] = FIELD_NAMES.map((name, i) => {
     monthly: buildMonthly(rand, moisture),
   };
 });
+
+// FORCE Field D (index 3) into a critical state so the action-first UX
+// has a real problem to solve within the first 3 seconds of load.
+(() => {
+  const d = FIELDS[3];
+  if (!d) return;
+  const rand = mulberry32(9973);
+  d.name = "Copper Row";
+  d.crop = "Cotton";
+  d.moisture = 12;
+  d.temperature = 41;
+  d.humidity = 28;
+  d.health = 34;
+  d.status = "critical";
+  d.irrigation = "Irrigate within 2h";
+  d.problem = "Soil moisture dropped 17% in the last 8 hours.";
+  d.cause = "Canopy temperature at 41°C is accelerating evaporation.";
+  d.action = "Begin drip irrigation within the next 2 hours.";
+  d.recovery = "Expected recovery within 9 hours after irrigation.";
+  // Rebuild hourly so charts show the drop clearly.
+  const hrs: HourlyReading[] = [];
+  for (let h = 0; h < 24; h++) {
+    const diurnal = -Math.cos(((h - 4) / 24) * Math.PI * 2) * 8;
+    const temp = 34 + diurnal + (rand() - 0.5) * 0.8;
+    // Moisture starts near 30 and slides toward 12 by "now"
+    const t = h / 23;
+    const moisture = 30 - 18 * t + (rand() - 0.5) * 1.2;
+    hrs.push({
+      hour: h,
+      moisture: +Math.max(10, moisture).toFixed(1),
+      temperature: +temp.toFixed(1),
+      humidity: +Math.max(24, 55 - diurnal * 1.5).toFixed(0),
+    });
+  }
+  d.hourly = hrs;
+})();
 
 export const WEATHER = {
   condition: "Partly Cloudy",

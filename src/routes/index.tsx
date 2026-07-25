@@ -1,6 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { createFileRoute } from "@tanstack/react-router";
+import { toast } from "sonner";
+import { AlertTriangle } from "lucide-react";
 import { FIELDS } from "@/lib/farm-data";
 import { useLenis } from "@/hooks/useLenis";
 import { FarmGrid } from "@/components/farm/FarmGrid";
@@ -52,7 +54,10 @@ type ChartKey = (typeof CHARTS)[number]["key"];
 
 function Dashboard() {
   useLenis();
-  const [selectedId, setSelectedId] = useState(FIELDS[0].id);
+  const criticalFields = useMemo(() => FIELDS.filter((f) => f.status === "critical"), []);
+  const [selectedId, setSelectedId] = useState(
+    (criticalFields[0] ?? FIELDS[0]).id,
+  );
   const [hour, setHour] = useState(new Date().getHours());
   const [activeChart, setActiveChart] = useState<ChartKey>("moisture");
 
@@ -61,14 +66,28 @@ function Dashboard() {
     [selectedId],
   );
 
-  // Values interpolated at the selected timeline hour
   const reading = field.hourly[hour] ?? field.hourly[0];
   const liveMoisture = reading.moisture;
   const liveTemperature = reading.temperature;
 
   const totalHealthy = FIELDS.filter((f) => f.status === "healthy").length;
-  const totalCritical = FIELDS.filter((f) => f.status === "critical").length;
+  const totalWarning = FIELDS.filter((f) => f.status === "warning").length;
+  const totalCritical = criticalFields.length;
   const overall = Math.round(FIELDS.reduce((a, f) => a + f.health, 0) / FIELDS.length);
+
+  // Auto-alert: fire the toast for the top critical field within the first
+  // 3 seconds so a farmer opening the app sees the problem hands-free.
+  useEffect(() => {
+    const c = criticalFields[0];
+    if (!c) return;
+    const t = setTimeout(() => {
+      toast.error(`${c.name}: Immediate irrigation required`, {
+        description: `Moisture ${c.moisture}% · Canopy ${c.temperature}°C · ${c.action ?? "Begin drip irrigation within 2 hours."}`,
+        duration: 8000,
+      });
+    }, 1200);
+    return () => clearTimeout(t);
+  }, [criticalFields]);
 
   return (
     <main className="bg-topo min-h-screen text-dark-text">
@@ -108,8 +127,27 @@ function Dashboard() {
               </div>
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <span className="chip"><span className="blink h-1.5 w-1.5 rounded-full bg-healthy" />Live</span>
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            {totalCritical > 0 && (
+              <motion.button
+                onClick={() => criticalFields[0] && setSelectedId(criticalFields[0].id)}
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                className="relative inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold text-white"
+                style={{
+                  background: "linear-gradient(140deg, var(--critical), #b8322c)",
+                  boxShadow: "0 8px 22px -10px rgba(217,76,69,0.7)",
+                }}
+              >
+                <span className="blink h-1.5 w-1.5 rounded-full bg-white" />
+                <AlertTriangle size={14} />
+                {totalCritical} Field{totalCritical > 1 ? "s" : ""} Need
+                {totalCritical > 1 ? "" : "s"} Immediate Action
+              </motion.button>
+            )}
+            <span className="chip"><span className="blink h-1.5 w-1.5 rounded-full bg-healthy" />Live · {totalHealthy} healthy · {totalWarning} watch</span>
             <span className="chip font-mono">Season · Kharif '26</span>
           </div>
         </header>
