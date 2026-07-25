@@ -127,8 +127,27 @@ function Dashboard() {
               </div>
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <span className="chip"><span className="blink h-1.5 w-1.5 rounded-full bg-healthy" />Live</span>
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            {totalCritical > 0 && (
+              <motion.button
+                onClick={() => criticalFields[0] && setSelectedId(criticalFields[0].id)}
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                className="relative inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold text-white"
+                style={{
+                  background: "linear-gradient(140deg, var(--critical), #b8322c)",
+                  boxShadow: "0 8px 22px -10px rgba(217,76,69,0.7)",
+                }}
+              >
+                <span className="blink h-1.5 w-1.5 rounded-full bg-white" />
+                <AlertTriangle size={14} />
+                {totalCritical} Field{totalCritical > 1 ? "s" : ""} Need
+                {totalCritical > 1 ? "" : "s"} Immediate Action
+              </motion.button>
+            )}
+            <span className="chip"><span className="blink h-1.5 w-1.5 rounded-full bg-healthy" />Live · {totalHealthy} healthy · {totalWarning} watch</span>
             <span className="chip font-mono">Season · Kharif '26</span>
           </div>
         </header>
